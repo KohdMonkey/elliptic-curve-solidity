@@ -33,8 +33,11 @@ contract('SECP256R1', async (accounts) => {
     ];
 
     // Create random message and sha256-hash it.
-    var message = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
-    messageHash = ethereumJSUtil.bufferToHex(ethereumJSUtil.sha256(message));
+    var message = Buffer.from('hello, world');
+    var hash = ethereumJSUtil.sha256(message);
+    messageHash = ethereumJSUtil.bufferToHex(hash);
+    // var message = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+    // messageHash = ethereumJSUtil.bufferToHex(ethereumJSUtil.sha256(message));
 
     // Create signature.
     var signer = crypto.createSign('RSA-SHA256');
@@ -73,7 +76,13 @@ contract('SECP256R1', async (accounts) => {
 
   it('confirm valid signature (#1)', async () =>  {
 
+    console.log('messageHash: ', messageHash)
+    console.log('signature: ', signature)
+    console.log('public key: ', publicKey)
+    gas = await curve.validateSignature.estimateGas(messageHash, signature, publicKey);
+    console.log('gas: ', gas)
     var result = await curve.validateSignature.call(messageHash, signature, publicKey);
+    console.log('result: ', result)
     assert.equal(result, true);
 
   });
@@ -102,8 +111,8 @@ contract('SECP256R1', async (accounts) => {
   });
 
   it('reject signature with invalid message hash', async () =>  {
-
-    var invalidMessage = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 5);
+    var invalidMessage = Buffer.from('world, hello');
+    var invalidMessageHash = ethereumJSUtil.sha256(invalidMessage);
     var invalidMessageHash = ethereumJSUtil.bufferToHex(ethereumJSUtil.sha256(invalidMessage));
 
     var result = await curve.validateSignature.call(invalidMessageHash, signature, publicKey);
